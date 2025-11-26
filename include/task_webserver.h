@@ -16,4 +16,8 @@ void Webserver_stop();
 void Webserver_reconnect();
 void Webserver_sendata(String data);
 
+// FreeRTOS task function used by xTaskCreate
+// Signature: void task_name(void *pvParameters)
+void task_webserver_update(void *pvParameters);
+
 #endif
