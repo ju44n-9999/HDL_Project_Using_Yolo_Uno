@@ -1,8 +1,9 @@
 #include "coreiot.h"
+#include "global_semaphore.h"
 
 // ----------- CONFIGURE THESE! -----------
 const char* coreIOT_Server = "app.coreiot.io";  
-const char* coreIOT_Token = "g7drm1amhd3dchr379xu";   // Device Access Token
+const char* coreIOT_Token = "rVFapWxNLQwxeuXBQ9jR";   // Device Access Token
 const int   mqttPort = 1883;
 // ----------------------------------------
 
@@ -18,7 +19,8 @@ void reconnect() {
     if (client.connect("ESP32Client", coreIOT_Token, NULL)) {
       Serial.println("connected to CoreIOT Server!");
       client.subscribe("v1/devices/me/rpc/request/+");
-      Serial.println("Subscribed to v1/devices/me/rpc/request/+");
+      client.subscribe("v1/devices/me/attributes");
+      Serial.println("Subscribed to RPC and Attributes");
 
     } else {
       Serial.print("failed, rc=");
@@ -52,24 +54,48 @@ void callback(char* topic, byte* payload, unsigned int length) {
     return;
   }
 
-  const char* method = doc["method"];
-  if (strcmp(method, "setStateLED") == 0) {
-    // Check params type (could be boolean, int, or string according to your RPC)
-    // Example: {"method": "setValueLED", "params": "ON"}
-    const char* params = doc["params"];
-
-    if (strcmp(params, "ON") == 0) {
-      Serial.println("Device turned ON.");
-      //TODO
-
-    } else {   
-      Serial.println("Device turned OFF.");
-      //TODO
-
+  // Check if this is RPC or Attributes
+  if (strstr(topic, "rpc/request") != NULL) {
+    // Handle RPC commands
+    const char* method = doc["method"];
+    
+    // Toggle display mode (Temperature <-> Humidity)
+    if (strcmp(method, "toggleDisplayMode") == 0) {
+      dht_display_mode = (dht_display_mode == 1) ? 2 : 1;
+      Serial.print("Display mode toggled to: ");
+      Serial.println(dht_display_mode == 1 ? "Temperature" : "Humidity");
+    } 
+    // Old RPC command for LED control (I'm not gonna use it, but keep for reference)
+    else if (strcmp(method, "setStateLED") == 0) {
+      const char* params = doc["params"];
+      if (strcmp(params, "ON") == 0) {
+        Serial.println("Device turned ON.");
+      } else {   
+        Serial.println("Device turned OFF.");
+      }
+    } 
+    else {
+      Serial.print("Unknown method: ");
+      Serial.println(method);
     }
-  } else {
-    Serial.print("Unknown method: ");
-    Serial.println(method);
+  }
+  else if (strstr(topic, "attributes") != NULL) {
+    // Handle Attributes from CoreIOT
+    // Example: {"ledBrightness": 100, "displayMode": 1}
+    
+    if (doc.containsKey("ledBrightness")) {
+      int brightness = doc["ledBrightness"];
+      Serial.print("LED Brightness set to: ");
+      Serial.println(brightness);
+      // TODO: Implement LED brightness control
+    }
+    
+    if (doc.containsKey("displayMode")) {
+      int mode = doc["displayMode"];
+      dht_display_mode = mode;
+      Serial.print("Display mode set to: ");
+      Serial.println(mode == 1 ? "Temperature" : "Humidity");
+    }
   }
 }
 
