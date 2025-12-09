@@ -16,9 +16,21 @@ extern String CORE_IOT_SERVER;
 extern String CORE_IOT_PORT;
 
 extern boolean isWifiConnected;
-extern SemaphoreHandle_t xBinarySemaphoreInternet;
-extern SemaphoreHandle_t xSemaphoreNeo;
-extern volatile int neo_mode;
-extern SemaphoreHandle_t xSemaphoreDHTToggle;
+
+// LED modes for temperature
+// 0 = steady on (< 30°C)
+// 1 = blink 500ms (30-40°C)
+// 2 = blink 100ms (> 40°C)
+extern volatile int temperature_mode;
+
+// NeoPixel color modes for humidity
+// 0 = green (< 80%)
+// 1 = yellow (80-85%)
+// 2 = orange (85-90%)
+// 3 = orange-red (90-95%)
+// 4 = red (95-100%)
+extern volatile int neo_color_mode;
+
 extern volatile int dht_display_mode;
+
 #endif
