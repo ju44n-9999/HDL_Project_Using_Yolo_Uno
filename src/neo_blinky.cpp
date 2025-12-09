@@ -1,5 +1,6 @@
 #include "neo_blinky.h"
 #include "global.h"
+#include "global_semaphore.h"
 
 
 void neo_blinky(void *pvParameters){
@@ -10,51 +11,39 @@ void neo_blinky(void *pvParameters){
     strip.clear();
     strip.show();
 
+    // Initialize semaphores if not already done
+    if (xSemaphoreNeoDHT == NULL) {
+        xSemaphoreNeoDHT = xSemaphoreCreateBinary();
+    }
+
     bool led_on = false;
 
     for(;;) {
-        int mode = neo_mode; // read current mode
+        int color_mode = neo_color_mode; // read current color mode based on humidity
 
-        if (mode == 0) {
-            // steady green
-            strip.setPixelColor(0, strip.Color(0, 255, 0));
-            strip.show();
-            // wait indefinitely until temp/humi task signals a mode change
-            if (xSemaphoreTake(xSemaphoreNeo, portMAX_DELAY) == pdTRUE) {
-                continue;
-            }
+        // Display color based on humidity level
+        uint32_t color = strip.Color(0, 255, 0); // default green
+        
+        if (color_mode == 1) {
+            // yellow (80-85%)
+            color = strip.Color(255, 255, 0);
+        } else if (color_mode == 2) {
+            // orange (85-90%)
+            color = strip.Color(255, 165, 0);
+        } else if (color_mode == 3) {
+            // orange-red (90-95%)
+            color = strip.Color(255, 69, 0);
+        } else if (color_mode == 4) {
+            // red (95-100%)
+            color = strip.Color(255, 0, 0);
         } else {
-            uint32_t interval_ms = 500;
-            uint32_t r = 255, g = 0, b = 0; // default red
-
-            if (mode == 1) { // red 500ms
-                interval_ms = 500;
-                r = 255; g = 0; b = 0;
-            } else if (mode == 2) { // red 100ms
-                interval_ms = 100;
-                r = 255; g = 0; b = 0;
-            } else if (mode == 3) { // blue 500ms
-                interval_ms = 500;
-                r = 0; g = 0; b = 255;
-            } else if (mode == 4) { // blue 100ms
-                interval_ms = 100;
-                r = 0; g = 0; b = 255;
-            }
-
-            if (led_on) {
-                strip.setPixelColor(0, strip.Color(0, 0, 0));
-                led_on = false;
-            } else {
-                strip.setPixelColor(0, strip.Color(r, g, b));
-                led_on = true;
-            }
-            strip.show();
-
-            // wait for either the blink interval or a semaphore from monitor task
-            if (xSemaphoreTake(xSemaphoreNeo, pdMS_TO_TICKS(interval_ms)) == pdTRUE) {
-                // mode may have changed; loop will read new neo_mode
-                continue;
-            }
+            // green (< 80%)
+            color = strip.Color(0, 255, 0);
         }
+        
+        strip.setPixelColor(0, color);
+        strip.show();
+        
+        vTaskDelay(pdMS_TO_TICKS(100));
     }
 }
