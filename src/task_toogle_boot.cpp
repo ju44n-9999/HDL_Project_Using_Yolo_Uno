@@ -34,9 +34,8 @@ void Task_Toogle_BOOT(void *pvParameters)
                 unsigned long pressDuration = millis() - buttonPressStartTime;
                 if (pressDuration < 2000)
                 {
-                    // short press: toggle DHT display mode and notify monitor task
-                    dht_display_mode = (dht_display_mode + 1) % 3; // 0->1->2->0
-                    xSemaphoreGive(xSemaphoreDHTToggle);
+                    // short press: toggle DHT display mode
+                    dht_display_mode = (dht_display_mode == 1) ? 2 : 1; // 1->2->1
                 }
                 // reset timer
                 buttonPressStartTime = 0;
