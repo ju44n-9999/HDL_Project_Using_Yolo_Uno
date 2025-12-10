@@ -109,6 +109,6 @@ void task_wifi_handler(void *pvParameters)
             Serial.println("WiFi not connected, retrying...");
         }
         Serial.flush();
-        vTaskDelay(5000 / portTICK_PERIOD_MS);  // Check every 5 seconds (to prevent spamming)
+        vTaskDelay(500 / portTICK_PERIOD_MS);  // Check every 0.5 seconds
     }
 }
